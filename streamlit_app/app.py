@@ -60,7 +60,7 @@ X_test = data["X_test"]
 y_test = data["y_test"]
 
 # Load model
-with open("../xgb_model.pkl", "rb") as f:
+with open("streamlit_app/xgb_model.pkl", "rb") as f:
     model = pickle.load(f)
 
 
