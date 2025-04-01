@@ -51,7 +51,7 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 # Load data
-with open("dataset.pkl", "rb") as f:
+with open("streamlit_app/dataset.pkl", "rb") as f:
     data = pickle.load(f)
 
 X_train = data["X_train"]
@@ -60,7 +60,7 @@ X_test = data["X_test"]
 y_test = data["y_test"]
 
 # Load model
-with open("xgb_model.pkl", "rb") as f:
+with open("../xgb_model.pkl", "rb") as f:
     model = pickle.load(f)
 
 
