@@ -3,6 +3,9 @@ import pandas as pd
 import pydeck as pdk
 import streamlit as st
 
+def styled_subheader(text): 
+    st.markdown(f"<h3 style='color: #ff6200;'>{text}</h3>", unsafe_allow_html=True)
+
 def ColourWidgetText(wgt_txt, wch_colour = '#000000'):
     htmlstr = """<script>var elements = window.parent.document.querySelectorAll('*'), i;
                     for (i = 0; i < elements.length; ++i) { if (elements[i].innerText == |wgt_txt|) 

@@ -4,7 +4,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 import numpy as np
 from sklearn.metrics import mean_absolute_error
-from utils import ColourWidgetText
+from utils import ColourWidgetText, styled_subheader
 import shap
 from matplotlib import pyplot as plt
 
@@ -20,7 +20,7 @@ def show(X_train, y_train, X_test, y_test, model, COLOR):
     col1, col2 = st.columns(2)
     with col1:
         colors = px.colors.sequential.Inferno
-        st.subheader("Predictions Train")
+        styled_subheader("Predictions Train")
 
         sorted_indices_train = y_train.sort_values(ascending=True).index
         sorted_indices_test = y_test.sort_values(ascending=True).index
@@ -33,7 +33,7 @@ def show(X_train, y_train, X_test, y_test, model, COLOR):
         st.plotly_chart(fig1, use_container_width=True)
     
     with col2:
-        st.subheader("Predictions Test")
+        styled_subheader("Predictions Test")
         fig1 = go.Figure()
         fig1.add_trace(go.Scatter(x=np.arange(len(y_test)), y=sorted_predictions_test, mode='lines', name='Predictions Train', line=dict(color=colors[4])))
         fig1.add_trace(go.Scatter(x=np.arange(len(y_test)), y=y_test.sort_values(ascending=True).values, mode='lines', name='Predictions Train', line=dict(color=colors[7])))
@@ -48,7 +48,7 @@ def show(X_train, y_train, X_test, y_test, model, COLOR):
     axes_color = "gray"
 
     with col1:
-        st.subheader("SHAP Summary Plot")
+        styled_subheader("SHAP Summary Plot")
         fig, ax = plt.subplots()
         shap.summary_plot(shap_values, X_test, show=False, plot_type="dot", cmap = "OrRd")  # Generate the SHAP plot
         # Customize the figure to match Streamlit's dark theme
@@ -64,7 +64,7 @@ def show(X_train, y_train, X_test, y_test, model, COLOR):
         st.pyplot(fig, use_container_width=True)
     
     with col2:
-        st.subheader("SHAP Bar Plot")
+        styled_subheader("SHAP Bar Plot")
         # Generate the SHAP bar plot
         fig, ax = plt.subplots()
         shap.plots.bar(shap_values, show=False)  # Generate the SHAP bar plot
@@ -89,7 +89,7 @@ def show(X_train, y_train, X_test, y_test, model, COLOR):
         st.pyplot(fig, use_container_width=True)
 
 
-    st.subheader("Data Statistics")
+    styled_subheader("Data Statistics")
     col1, col2, col3 = st.columns(3)
 
     # Ensure predictions are writable by creating copies

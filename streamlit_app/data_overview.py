@@ -1,9 +1,9 @@
 import streamlit as st
+from utils import styled_subheader
 
 def show(data):
-    st.markdown("""
-        <h3 style='color: #ff6200;'>Data overview</h3>
-    """, unsafe_allow_html=True)
+    
+    styled_subheader("Data overview")
     
     # Użycie kontenera dla obramowania
     with st.container():
