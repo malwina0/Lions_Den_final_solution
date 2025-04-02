@@ -309,7 +309,37 @@ def preprocess_test(df, df_me, city_encoder, voivodeship_encoder, county_encoder
 
 
 
+def feature_engineering(df):
+    """
+    Function to generate new features for real estate data.
+    :param df: pandas DataFrame containing real estate data
+    :return: DataFrame with new features added
+    """
+    df = df.copy()
 
+    # Building and Location Features
+    df["Building_Density"] = df["GUS_population_density"] / df["GUS_population"]
+    df["Modern_Building"] = (df["CONSTRUCTION_YEAR"] > 2010).astype(int)
+    df["Usable_Area_per_Floor"] = df["USABLE_AREA"] / df["FLOORS_NO"]
+    df["Urbanization_Density"] = df["GUS_population_density"] * df["GUS_urbanisation_rate"]
+
+    # Energy and Ecology Features
+    df["Carbon_Footprint_per_m2"] = df["CO2_EMISSION"] / df["USABLE_AREA"]
+    df["Eco_Friendly"] = (
+                (df["RENEWABLE_ENERGY_ELECTRIC"] == 'Yes') | (df["RENEWABLE_ENERGY_HEATING"] == 'Yes')).astype(int)
+    df["Energy_Efficiency"] = (df["INDEX_FED"] + df["INDEX_PED"] + df["INDEX_UED"]) / 3
+
+    # Property Value Features
+    df["Price_per_m2"] = df["VALUE"] / df["USABLE_AREA"]
+    df["Regional_Price"] = df["VALUE"] / df["GUS_population"]
+    df["Primary_Market"] = (df["MARKET_TYPE"] == "Pierwotny").astype(int)
+    df["Flood_Risk"] = df["county_flood_risk_rating"].isin(["High", "Very high"]).astype(int)
+
+    # Macroeconomic and Market Trend Features
+    df["Housing_Growth_vs_Wages"] = df["sal_void_eoq"] / df["RHP"]
+    df["Investment_Attractiveness"] = ((df["GUS_population_change"] > 0) & (df["unemp_county_y_pct"] < 5)).astype(int)
+
+    return df
 
 
 
