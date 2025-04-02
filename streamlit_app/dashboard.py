@@ -6,7 +6,12 @@ import numpy as np
 from sklearn.metrics import mean_absolute_error
 from utils import ColourWidgetText, styled_subheader
 import shap
+import pandas as pd
 from matplotlib import pyplot as plt
+import seaborn as sns
+import statsmodels.api as sm
+import scipy.stats as stats
+
 
 ING_COLOR = "#ff6200"
 
@@ -107,4 +112,91 @@ def show(X_train, y_train, X_test, y_test, model, COLOR):
 
     ColourWidgetText(f"{len(X_test)}", '#808080') 
     ColourWidgetText(f"{train_mae:.2f}", '#808080') 
-    ColourWidgetText(f"{test_mae:.2f}", '#808080') 
+    ColourWidgetText(f"{test_mae:.2f}", '#808080')
+
+
+def load_data():
+    # Załaduj dane do DataFrame (wstaw swoją ścieżkę do pliku)
+    df = pd.read_csv('Me_summary.csv')
+    df['year_month'] = pd.to_datetime(df['year_month'], errors='coerce')
+    return df
+
+
+# Funkcja do tworzenia wykresu zależności
+def create_scatter_plot(df):
+    # Wykres zależności 'VALUATION_VALUE' od '3MR_Annual_absolute_difference'
+    fig, ax = plt.subplots(figsize=(10, 6))
+    sns.scatterplot(x=df['3MR_Annual_absolute_difference'], y=df['VALUATION_VALUE'], ax=ax)
+    ax.set_title('Relationship VALUATION_VALUE and 3MR_Annual_absolute_difference')
+    ax.set_xlabel('3MR_Annual_absolute_difference')
+    ax.set_ylabel('VALUATION_VALUE')
+
+    # Zwracamy wykres
+    st.pyplot(fig)
+
+    # Wykres zależności 'VALUATION_VALUE' od '3MR_Raw'
+    fig, ax = plt.subplots(figsize=(10, 6))
+    sns.scatterplot(x=df['3MR_Raw'], y=df['VALUATION_VALUE'], ax=ax)
+    ax.set_title('Zależność VALUATION_VALUE od 3MR_Raw')
+    ax.set_xlabel('3MR_Raw')
+    ax.set_ylabel('VALUATION_VALUE')
+
+    # Zwracamy wykres
+    st.pyplot(fig)
+
+
+# Funkcja do wyświetlania macierzy korelacji
+def plot_correlation_matrix(df):
+    df_tmp = df.drop(columns=['year_month']).columns
+    correlation_matrix = df_tmp.corr()
+
+    # Wykres macierzy korelacji
+    fig, ax = plt.subplots(figsize=(8, 6))
+    sns.heatmap(correlation_matrix, annot=True, cmap='coolwarm', fmt='.2f', linewidths=0.5, ax=ax)
+    ax.set_title('Correlation matrix')
+
+    # Wyświetlenie wykresu
+    st.pyplot(fig)
+
+def multiple_linear_regression(df, target_variable):
+    # Select all columns except the target variable and date columns
+    feature_columns = df.drop(columns=[target_variable, 'year_month']).columns
+    X = df[feature_columns]  # Independent variables (features)
+    y = df[target_variable]  # Dependent variable (target)
+
+    # Add a constant (intercept) to the model
+    X = sm.add_constant(X)
+
+    # Fit the model
+    model = sm.OLS(y, X).fit()
+    st.write(model.summary())  # Display regression results
+
+    # Visualization of multiple regression (using one feature for simplicity)
+    fig, ax = plt.subplots(figsize=(10, 6))
+    sns.regplot(x=df['3MR_Annual_absolute_difference'], y=df[target_variable], ax=ax, scatter_kws={'s': 50}, line_kws={'color': 'blue'})
+    ax.set_title(f'Multiple Linear Regression: 3MR_Annual_absolute_difference vs {target_variable}')
+    ax.set_xlabel('3MR_Annual_absolute_difference')
+    ax.set_ylabel(target_variable)
+    st.pyplot(fig)
+
+
+def multiple_linear_regression(df, target_variable):
+    # Select all columns except the target variable and date columns
+    feature_columns = df.drop(columns=[target_variable, 'year_month']).columns
+    X = df[feature_columns]  # Independent variables (features)
+    y = df[target_variable]  # Dependent variable (target)
+
+    # Add a constant (intercept) to the model
+    X = sm.add_constant(X)
+
+    # Fit the model
+    model = sm.OLS(y, X).fit()
+    st.write(model.summary())  # Display regression results
+
+    # Visualization of multiple regression (using one feature for simplicity)
+    fig, ax = plt.subplots(figsize=(10, 6))
+    sns.regplot(x=df['3MR_Annual_absolute_difference'], y=df[target_variable], ax=ax, scatter_kws={'s': 50}, line_kws={'color': 'blue'})
+    ax.set_title(f'Multiple Linear Regression: 3MR_Annual_absolute_difference vs {target_variable}')
+    ax.set_xlabel('3MR_Annual_absolute_difference')
+    ax.set_ylabel(target_variable)
+    st.pyplot(fig)

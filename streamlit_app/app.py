@@ -13,6 +13,7 @@ import map
 import data_overview
 import matplotlib.pyplot as plt
 import shap
+from dashboard import *
 
 # color palette: https://pythonfriday.dev/2023/09/193-choosing-colours-for-plotly/, #8C2972
 
@@ -23,7 +24,7 @@ import shap
 COLOR = "#FFFFFF"
 METRIC_COLOR = "#ff6200"
 
-st.set_page_config(layout="wide")
+# st.set_page_config(layout="wide")
 
 st.markdown(f"""
     <style>
@@ -63,16 +64,28 @@ y_test = data["y_test"]
 with open("streamlit_app/xgb_model.pkl", "rb") as f:
     model = pickle.load(f)
 
+def main():
+    st.title('Analiza zależności od VALUATION_VALUE')
 
-# Tabs
-tab1, tab2, tab3 = st.tabs(["Dashboard", "Map", "Data overview"])
+    # Ładowanie danych
+    df = load_data()
 
-with tab1:
-    dashboard.show(X_train, y_train, X_test, y_test, model, COLOR)
+    # Tworzenie zakładek
+    tab1, tab2, tab3 = st.tabs(["Marco-economic relationships", "correlation matrix", "Linear regression" ])
 
-# with tab2:
-#     data = pd.read_csv("../processed_data.csv")
-#     map.show(data)
+    # Zakładka 1 - Wykresy zależności
+    with tab1:
+        st.subheader('Relationships in data')
+        create_scatter_plot(df)
+        plot_correlation_matrix(df)
 
-with tab3:
-    data_overview.show(X_train)
+    # Zakładka 2 - Macierz korelacji
+    with tab2:
+        st.subheader('Correlation matrix')
+        plot_correlation_matrix(df)
+
+    with tab3:
+        multiple_linear_regression(df, 'VALUATION_VALUE')
+
+if __name__ == "__main__":
+    main()
