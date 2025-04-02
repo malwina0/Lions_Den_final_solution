@@ -9,13 +9,17 @@ def filter_out_non_housing(df):
     return df[df['PROPERTY_KIND'].isin(['Lokal mieszkalny', 'Budynek mieszkalny jednorodzinny'])]
 
 
-def drop_empty_columns(df, threshold=0.6):
+def drop_empty_columns(df):
     """
     Drop columns that have at least 60% of missing values and are not in COLS_TO_KEEP.
     """
-    COLS_TO_KEEP = ['RENEWABLE_ENERGY_HEATING', 'RENEWABLE_ENERGY_ELECTRIC', 'CERTIFICATE_PHI', 'STOREY']
-    missing_ratio = df.isnull().mean()
-    cols_to_drop = [col for col in df.columns if (missing_ratio[col] >= threshold and col not in COLS_TO_KEEP)]
+    cols_to_drop = ['SUBTYPE', 'SHARE', 'UTIL_WATER_INTAKE', 'UTIL_WATER_SUPPLY', 'UTIL_ELECTRICITY',
+                    'UTIL_GAS', 'UTIL_SEWAGE_SYSTEM_CONNECTION', 'UTIL_SEWAGE_SYSTEM_OWN', 'PREMISSES_STANDARD',
+                    'PREMISSES_INDEX_PED', 'PREMISSES_INDEX_FED', 'PREMISSES_INDEX_UED', 'PREMISSES_ENERGY_PERF_CERT_DATE',
+                    'PREMISSES_ENERGY_PERF_CERT_VALI', 'PREMISSES_RES_SHARE', 'PREMISSES_CO2_EMMISSION', 'CITY_ZONE',
+                    'FLOORS_NO', 'BUILDING_CHAMBER_NO', 'BUILDING_INDEX_PED', 'BUILDING_INDEX_FED', 'BUILDING_INDEX_UED',
+                    'BUILDING_ENERGY_PERF_CERT_DATE', 'BUILDING_ENERGY_PERF_CERT_VALI', 'BUILDING_RES_SHARE',
+                    'BUILDING_CO2_EMMISSION', 'PARCEL_AREA', 'PARKING_SPACE_ID', 'PARKING_KIND', 'NUMBER']
     df_cleaned = df.drop(columns=cols_to_drop)
 
     return df_cleaned
