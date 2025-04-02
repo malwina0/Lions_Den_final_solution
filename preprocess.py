@@ -79,10 +79,11 @@ def preprocess_categorical(df):
 
     return df
 
+
 def enrich_dataframe_with_me_transformation(df: pd.DataFrame, df_me: pd.DataFrame) -> pd.DataFrame:
     """
-    Enriches the given DataFrame `df` by dynamically adding columns containing
-    values from `df_me` based on unique pairs of ME_Indicator and Transformation.
+    Enriches the given DataFrame df by dynamically adding columns containing
+    values from df_me based on unique pairs of ME_Indicator and Transformation.
 
     Parameters:
     - df (pd.DataFrame): The main DataFrame with a 'VALUE_DATE' column.
@@ -100,27 +101,37 @@ def enrich_dataframe_with_me_transformation(df: pd.DataFrame, df_me: pd.DataFram
 
     # Drop rows where VALUE_DATE is NaN - few values are dropped - explained in report
     df = df.dropna(subset=['VALUE_DATE']).reset_index(drop=True)
+    df_me = df_me.sort_values(by=['ME_Indicator', 'Transformation', 'Date_period_from'])
 
-    # Create new columns based on ME_Indicator and Transformation pairs
+    # Process each unique indicator-transformation pair
     for indicator, transformation in df_me[['ME_Indicator', 'Transformation']].drop_duplicates().values:
+        print(indicator, transformation)
         column_name = f"{indicator}_{transformation}".replace(" ", "_")
 
-        df[column_name] = df['VALUE_DATE'].apply(
-            lambda date: df_me.loc[
-                (df_me['ME_Indicator'] == indicator) &
-                (df_me['Transformation'] == transformation) &
-                (df_me['Date_period_from'] <= date) &
-                (df_me['Date_period_until'] >= date), 'Value'
-            ].values[0]
-            if not df_me.loc[
-                (df_me['ME_Indicator'] == indicator) &
-                (df_me['Transformation'] == transformation) &
-                (df_me['Date_period_from'] <= date) &
-                (df_me['Date_period_until'] >= date)
-                ].empty else None
+        # Filter the relevant subset from df_me
+        filtered_me = df_me[
+            (df_me['ME_Indicator'] == indicator) &
+            (df_me['Transformation'] == transformation)
+        ].sort_values('Date_period_from')
+
+        # Merge using asof to match the nearest Date_period_from
+        merged_df = pd.merge_asof(
+            df.sort_values('VALUE_DATE'),
+            filtered_me[['Date_period_from', 'Date_period_until', 'Value']],
+            left_on='VALUE_DATE',
+            right_on='Date_period_from',
+            direction='backward'  # Ensures we match the most recent valid period
         )
+        merged_df.to_csv('test.csv')
+        # Ensure 'Date_period_until' exists before filtering
+        if 'Date_period_until' in merged_df.columns:
+            merged_df.loc[merged_df['VALUE_DATE'] > merged_df['Date_period_until'], 'Value'] = None
+
+        # Rename column to match indicator & transformation
+        df[column_name] = merged_df['Value']
 
     return df
+
 
 def encode_categorical_columns(df):
     """
