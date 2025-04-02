@@ -58,6 +58,7 @@ def preprocess_categorical(df):
         "BUILDING_TECHNICAL_CONDITION": {"ND": np.nan},
         "BUILDING_STANDARD_QUALITY": {"Brak informacji": np.nan},
         "PREMISSES_STANDARD_QUALITY": {"Brak informacji": np.nan},
+        "CONSTRUCTION_TYPE" : {"ND": np.nan},
         "VOIVODESHIP": {"INNE": np.nan}
     }
 
@@ -149,11 +150,22 @@ def encode_categorical_columns(df):
     market_type_mapping = {'wtórny': 0, 'pierwotny': 1}
     df['MARKET_TYPE'] = df['MARKET_TYPE'].map(market_type_mapping)
 
+    special_impute_cols = ['RENEWABLE_ENERGY_HEATING', 'RENEWABLE_ENERGY_ELECTRIC', 'CERTIFICATE_PHI']
+    for col in special_impute_cols:
+        if col in df.columns:
+            df[col] = df[col].fillna("Nie")
+
+    no_yes_mapping = {'Nie': 0, 'Tak': 1}
+    df['RENEWABLE_ENERGY_HEATING'] = df['RENEWABLE_ENERGY_HEATING'].map(no_yes_mapping)
+    df['RENEWABLE_ENERGY_ELECTRIC'] = df['RENEWABLE_ENERGY_ELECTRIC'].map(no_yes_mapping)
+    df['CERTIFICATE_PHI'] = df['CERTIFICATE_PHI'].map(no_yes_mapping)
+
     df = df[df['CONSTRUCTION_YEAR'] >= 1600]
     df = pd.get_dummies(df, columns = ['CONSTRUCTION_TYPE'], dtype=float)
     df = pd.get_dummies(df, columns = ['PROPERTY_KIND'], dtype=float)
     df = pd.get_dummies(df, columns = ['INFORMATION_SOURCE'], dtype=float)
     df = pd.get_dummies(df, columns = ['TYPE_OF_BUILD'], dtype=float)
+    df = pd.get_dummies(df, columns = ['BUILDING_KIND'], dtype=float)
 
     return df
 
@@ -161,7 +173,7 @@ def drop_columns(df):
     """
     Drop unnecessary columns from the DataFrame.
     """
-    cols_to_drop = ['voivodeship_flood_risk_rating']
+    cols_to_drop = ['voivodeship_flood_risk_rating', 'VALUE_DATE']
     df = df.drop(columns=cols_to_drop)
 
     return df
@@ -199,18 +211,10 @@ def apply_target_encoder(df, city_encoder, voivodeship_encoder, county_encoder, 
 def custom_imputation(df, knn_neighbors=5):
     """
     Custom imputation function for missing values in the DataFrame.
-    - Imputes "Nie" for specific columns.
     - Imputes -1 for columns with >= 25% missing values.
     - Applies KNN imputation for columns with < 25% missing values.
     """
     df = df.copy()  
-    special_impute_cols = ['RENEWABLE_ENERGY_HEATING', 'RENEWABLE_ENERGY_ELECTRIC', 'CERTIFICATE_PHI']
-    
-    # Impute "Nie" for special columns
-    for col in special_impute_cols:
-        if col in df.columns:
-            df[col] = df[col].fillna("Nie")
-    
     missing_perc = df.isna().mean() * 100
 
     # Impute -1 for columns with >= 25% missing values
@@ -229,13 +233,7 @@ def apply_custom_imputation(df, high_missing_cols, low_missing_cols, knn_imputer
     """
     Perform custom imputation on the test set.
     """
-    df = df.copy()  
-    special_impute_cols = ['RENEWABLE_ENERGY_HEATING', 'RENEWABLE_ENERGY_ELECTRIC', 'CERTIFICATE_PHI']
-    
-    for col in special_impute_cols:
-        if col in df.columns:
-            df[col] = df[col].fillna("Nie")
-    
+        
     df[high_missing_cols] = df[high_missing_cols].fillna(-1)
     if low_missing_cols:
         imputed_df = pd.DataFrame(knn_imputer.transform(df), columns=df.columns, index=df.index)
@@ -256,22 +254,22 @@ def preprocess_train(df, df_me):
     df_cleaned = drop_columns(df_cleaned)
 
     # Enrich the DataFrame with ME transformation data
-    # df_enriched = enrich_dataframe_with_me_transformation(df_cleaned_encoded, df_me)
+    df_enriched = enrich_dataframe_with_me_transformation(df_cleaned, df_me)
 
     # Preprocess categorical columns
-    df_enriched = preprocess_categorical(df_cleaned)
+    df_enriched_processed = preprocess_categorical(df_enriched)
 
     # encode categorical columns
-    df_encoded = encode_categorical_columns(df_enriched)
+    df_encoded = encode_categorical_columns(df_enriched_processed)
 
     X = df_encoded.drop(columns=['VALUATION_VALUE'])
     y = df_encoded['VALUATION_VALUE']
 
     # Fit and apply target encoder to the training set
-    X_encoded, city_encoder, voivodeship_encoder, county_encoder, community_encoder = fit_target_encoder(X, y)
+    X_encoded2, city_encoder, voivodeship_encoder, county_encoder, community_encoder = fit_target_encoder(X, y)
 
     # Fit and apply imputation
-    X_imputed, high_missing_cols, low_missing_cols, knn_imputer = custom_imputation(df_encoded)
+    X_imputed, high_missing_cols, low_missing_cols, knn_imputer = custom_imputation(X_encoded2)
 
     return X_imputed, y, city_encoder, voivodeship_encoder, county_encoder, community_encoder, high_missing_cols, low_missing_cols, knn_imputer 
 
@@ -286,23 +284,23 @@ def preprocess_test(X, df_me, city_encoder, voivodeship_encoder, county_encoder,
     # Drop empty columns
     df_cleaned = drop_empty_columns(df_housing)
 
-    # encode categorical columns
-    df_encoded = encode_categorical_columns(df_cleaned)
-
     # Drop unnecessary columns
-    df_cleaned_encoded = drop_columns(df_encoded)
+    df_cleaned_encoded = drop_columns(df_cleaned)
 
     # Enrich the DataFrame with ME transformation data
-    # df_enriched = enrich_dataframe_with_me_transformation(df_cleaned_encoded, df_me)
+    df_enriched = enrich_dataframe_with_me_transformation(df_cleaned_encoded, df_me)
 
     # Preprocess categorical columns
-    df_enriched = preprocess_categorical(df_cleaned_encoded)
+    df_enriched_processed = preprocess_categorical(df_enriched)
+
+    # encode categorical columns
+    df_encoded = encode_categorical_columns(df_enriched_processed)
 
     # Apply target encoder to the test set
-    df_enriched = apply_target_encoder(df_enriched, city_encoder, voivodeship_encoder, county_encoder, community_encoder)
+    df_encoded2 = apply_target_encoder(df_encoded, city_encoder, voivodeship_encoder, county_encoder, community_encoder)
 
     # Apply imputation
-    df_imputed = apply_custom_imputation(df_enriched, high_missing_cols, low_missing_cols, knn_imputer)
+    df_imputed = apply_custom_imputation(df_encoded2, high_missing_cols, low_missing_cols, knn_imputer)
 
     return df_imputed
 
