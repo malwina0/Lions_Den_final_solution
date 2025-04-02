@@ -36,7 +36,6 @@ def preprocess_categorical(df):
         "Ocena warto?ci zabezpieczenia na nieruchomo?ci": "Ocena wartości zabezpieczenia na nieruchomości",
         "Ocena wartości zabezpieczenia na nieruchomości (przed ESG)": "Ocena wartości zabezpieczenia na nieruchomości"
     }
-    print(df.columns)
     df['INFORMATION_SOURCE'] = df['INFORMATION_SOURCE'].replace(correction_map_is)
 
     # Correct text in 'BUILDING_KIND' column
@@ -147,6 +146,9 @@ def encode_categorical_columns(df):
     county_flood_risk_mapping = {'very low': 0, 'low': 1, 'medium': 2, 'high': 3, 'very high': 4}
     df['county_flood_risk_rating'] = df['county_flood_risk_rating'].map(county_flood_risk_mapping)
 
+    premissed_quality_mapping = {'niski': 0,'do remontu': 1,'średni': 2,'wysoki': 3, 'deweloperski / do wykończenia': 4, 'pod klucz' : 5}
+    df['PREMISSES_STANDARD_QUALITY'] = df['PREMISSES_STANDARD_QUALITY'].map(premissed_quality_mapping)
+
     market_type_mapping = {'wtórny': 0, 'pierwotny': 1}
     df['MARKET_TYPE'] = df['MARKET_TYPE'].map(market_type_mapping)
 
@@ -254,10 +256,10 @@ def preprocess_train(df, df_me):
     df_cleaned = drop_columns(df_cleaned)
 
     # Enrich the DataFrame with ME transformation data
-    df_enriched = enrich_dataframe_with_me_transformation(df_cleaned, df_me)
+    # df_enriched = enrich_dataframe_with_me_transformation(df_cleaned, df_me)
 
     # Preprocess categorical columns
-    df_enriched_processed = preprocess_categorical(df_enriched)
+    df_enriched_processed = preprocess_categorical(df_cleaned)
 
     # encode categorical columns
     df_encoded = encode_categorical_columns(df_enriched_processed)
@@ -269,17 +271,18 @@ def preprocess_train(df, df_me):
     X_encoded2, city_encoder, voivodeship_encoder, county_encoder, community_encoder = fit_target_encoder(X, y)
 
     # Fit and apply imputation
-    X_imputed, high_missing_cols, low_missing_cols, knn_imputer = custom_imputation(X_encoded2)
+    # X_imputed, high_missing_cols, low_missing_cols, knn_imputer = custom_imputation(X_encoded2)
 
-    return X_imputed, y, city_encoder, voivodeship_encoder, county_encoder, community_encoder, high_missing_cols, low_missing_cols, knn_imputer 
+    # return X_imputed, y, city_encoder, voivodeship_encoder, county_encoder, community_encoder, high_missing_cols, low_missing_cols, knn_imputer 
+    return X_encoded2, y, city_encoder, voivodeship_encoder, county_encoder, community_encoder
 
 
-def preprocess_test(X, df_me, city_encoder, voivodeship_encoder, county_encoder, community_encoder, high_missing_cols, low_missing_cols, knn_imputer):
+def preprocess_test(df, df_me, city_encoder, voivodeship_encoder, county_encoder, community_encoder):
     """
     Preprocess the DataFrame by filtering out non-housing data and dropping empty columns.
     """
     # Filter out non-housing data
-    df_housing = filter_out_non_housing(X)
+    df_housing = filter_out_non_housing(df)
 
     # Drop empty columns
     df_cleaned = drop_empty_columns(df_housing)
@@ -288,10 +291,10 @@ def preprocess_test(X, df_me, city_encoder, voivodeship_encoder, county_encoder,
     df_cleaned_encoded = drop_columns(df_cleaned)
 
     # Enrich the DataFrame with ME transformation data
-    df_enriched = enrich_dataframe_with_me_transformation(df_cleaned_encoded, df_me)
+    # df_enriched = enrich_dataframe_with_me_transformation(df_cleaned_encoded, df_me)
 
     # Preprocess categorical columns
-    df_enriched_processed = preprocess_categorical(df_enriched)
+    df_enriched_processed = preprocess_categorical(df_cleaned_encoded)
 
     # encode categorical columns
     df_encoded = encode_categorical_columns(df_enriched_processed)
@@ -300,9 +303,9 @@ def preprocess_test(X, df_me, city_encoder, voivodeship_encoder, county_encoder,
     df_encoded2 = apply_target_encoder(df_encoded, city_encoder, voivodeship_encoder, county_encoder, community_encoder)
 
     # Apply imputation
-    df_imputed = apply_custom_imputation(df_encoded2, high_missing_cols, low_missing_cols, knn_imputer)
+    # df_imputed = apply_custom_imputation(df_encoded2, high_missing_cols, low_missing_cols, knn_imputer)
 
-    return df_imputed
+    return df_encoded
 
 
 
