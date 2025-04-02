@@ -36,6 +36,7 @@ def preprocess_categorical(df):
         "Ocena warto?ci zabezpieczenia na nieruchomo?ci": "Ocena wartości zabezpieczenia na nieruchomości",
         "Ocena wartości zabezpieczenia na nieruchomości (przed ESG)": "Ocena wartości zabezpieczenia na nieruchomości"
     }
+    print(df.columns)
     df['INFORMATION_SOURCE'] = df['INFORMATION_SOURCE'].replace(correction_map_is)
 
     # Correct text in 'BUILDING_KIND' column
@@ -230,35 +231,38 @@ def apply_custom_imputation(df, high_missing_cols, low_missing_cols, knn_imputer
 
     return imputed_df
 
-def preprocess_train(X, y, df_me):
+def preprocess_train(df, df_me):
     """
     Preprocess the DataFrame by filtering out non-housing data and dropping empty columns.
     """
     # Filter out non-housing data
-    df_housing = filter_out_non_housing(X)
+    df_housing = filter_out_non_housing(df)
 
     # Drop empty columns
     df_cleaned = drop_empty_columns(df_housing)
 
-    # encode categorical columns
-    df_encoded = encode_categorical_columns(df_cleaned)
-
     # Drop unnecessary columns
-    df_cleaned_encoded = drop_columns(df_encoded)
+    df_cleaned = drop_columns(df_cleaned)
 
     # Enrich the DataFrame with ME transformation data
-    df_enriched = enrich_dataframe_with_me_transformation(df_cleaned_encoded, df_me)
+    # df_enriched = enrich_dataframe_with_me_transformation(df_cleaned_encoded, df_me)
 
     # Preprocess categorical columns
-    df_enriched = preprocess_categorical(df_enriched)
+    df_enriched = preprocess_categorical(df_cleaned)
+
+    # encode categorical columns
+    df_encoded = encode_categorical_columns(df_enriched)
+
+    X = df_encoded.drop(columns=['VALUATION_VALUE'])
+    y = df_encoded['VALUATION_VALUE']
 
     # Fit and apply target encoder to the training set
-    df_enriched, city_encoder, voivodeship_encoder, county_encoder, community_encoder = fit_target_encoder(df_enriched, y)
+    X_encoded, city_encoder, voivodeship_encoder, county_encoder, community_encoder = fit_target_encoder(X, y)
 
     # Fit and apply imputation
-    df_imputed, high_missing_cols, low_missing_cols, knn_imputer = custom_imputation(df_enriched)
+    X_imputed, high_missing_cols, low_missing_cols, knn_imputer = custom_imputation(df_encoded)
 
-    return df_imputed, city_encoder, voivodeship_encoder, county_encoder, community_encoder, high_missing_cols, low_missing_cols, knn_imputer 
+    return X_imputed, y, city_encoder, voivodeship_encoder, county_encoder, community_encoder, high_missing_cols, low_missing_cols, knn_imputer 
 
 
 def preprocess_test(X, df_me, city_encoder, voivodeship_encoder, county_encoder, community_encoder, high_missing_cols, low_missing_cols, knn_imputer):
@@ -278,10 +282,10 @@ def preprocess_test(X, df_me, city_encoder, voivodeship_encoder, county_encoder,
     df_cleaned_encoded = drop_columns(df_encoded)
 
     # Enrich the DataFrame with ME transformation data
-    df_enriched = enrich_dataframe_with_me_transformation(df_cleaned_encoded, df_me)
+    # df_enriched = enrich_dataframe_with_me_transformation(df_cleaned_encoded, df_me)
 
     # Preprocess categorical columns
-    df_enriched = preprocess_categorical(df_enriched)
+    df_enriched = preprocess_categorical(df_cleaned_encoded)
 
     # Apply target encoder to the test set
     df_enriched = apply_target_encoder(df_enriched, city_encoder, voivodeship_encoder, county_encoder, community_encoder)
