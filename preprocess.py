@@ -20,6 +20,56 @@ def drop_empty_columns(df, threshold=0.6):
 
     return df_cleaned
 
+def preprocess_categorical(df):
+    """
+    Preprocess categorical columns in the DataFrame.
+    """
+    # Correct text in 'INFORMATION_SOURCE' column
+    correction_map_is = {
+        "Umowa ostateczna sprzedaĹĽy rynek wtĂłrny": "Umowa ostateczna sprzedaży rynek wtórny",
+        "Ocena warto?ci zabezpieczenia na nieruchomo?ci": "Ocena wartości zabezpieczenia na nieruchomości",
+        "Ocena wartości zabezpieczenia na nieruchomości (przed ESG)": "Ocena wartości zabezpieczenia na nieruchomości"
+    }
+    df['INFORMATION_SOURCE'] = df['INFORMATION_SOURCE'].replace(correction_map_is)
+
+    # Correct text in 'BUILDING_KIND' column
+    correction_map_bk = {
+        "Wielorodzinny niski": "wielorodzinny",
+        "Wielorodzinny wysoki": "wielorodzinny",
+        "Budynek jednorodzinny": "jednorodzinny",
+        "Inny": np.nan,
+        "Brak informacji": np.nan
+    }
+    df['BUILDING_KIND'] = df['BUILDING_KIND'].replace(correction_map_bk)
+
+    # Correct text in 'CONSTRUCTION_TYPE' column
+    df['CONSTRUCTION_TYPE'] = df['CONSTRUCTION_TYPE'].replace({"MUROWANA (CEGŁA, PUSTAK)": "murowana"})
+
+    # Unify information about missing values
+    nan_replacements = {
+        "TYPE_OF_BUILD": {"Brak informacji": np.nan},
+        "BUILDING_TECHNICAL_CONDITION": {"ND": np.nan},
+        "BUILDING_STANDARD_QUALITY": {"Brak informacji": np.nan},
+        "PREMISSES_STANDARD_QUALITY": {"Brak informacji": np.nan},
+        "VOIVODESHIP": {"INNE": np.nan}
+    }
+
+    for col, mapping in nan_replacements.items():
+        if col in df.columns:
+            df[col] = df[col].replace(mapping)
+
+    # Change 'sal_void_eoq' column datatype to int
+    df['sal_void_eoq'] = pd.to_numeric(df['sal_void_eoq'], errors="coerce").astype("Int64")
+
+    # Change text columns to lowercase
+    cols_to_lower = ['PREMISSES_TECHNICAL_CONDITION', 'PREMISSES_STANDARD_QUALITY', 'VOIVODESHIP', 'COUNTY', 
+                     'COMMUNITY', 'CITY', 'BUILDING_KIND', 'CONSTRUCTION_TYPE', 'TYPE_OF_BUILD', 'BUILDING_TECHNICAL_CONDITION', 
+                     'BUILDING_STANDARD_QUALITY', 'voivodeship_flood_risk_rating', 'county_flood_risk_rating', 'INFORMATION_SOURCE']
+    for col in cols_to_lower:
+        if col in df.columns:
+            df[col] = df[col].str.lower()
+
+    return df
 
 def enrich_dataframe_with_me_transformation(df: pd.DataFrame, df_me: pd.DataFrame) -> pd.DataFrame:
     """
@@ -77,6 +127,9 @@ def preprocess(df, df_me):
 
     # Enrich the DataFrame with ME transformation data
     df_enriched = enrich_dataframe_with_me_transformation(df_cleaned, df_me)
+
+    # Preprocess categorical columns
+    df_enriched = preprocess_categorical(df_enriched)
 
     return df_cleaned
 
