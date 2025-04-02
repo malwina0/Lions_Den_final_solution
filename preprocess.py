@@ -138,23 +138,23 @@ def encode_categorical_columns(df):
     Encode categorical columns ( using one-hot encoding or label encoding depending on the column values).
     """
     condition_mapping = { 'zły': 0,'średni': 1,'dobry': 2,'bardzo dobry': 3}
-    df['PREMISSES_TECHNICAL_CONDITION'] = df['PREMISSES_TECHNICAL_CONDITION'].map(condition_mapping).astype('category')
-    df['BUILDING_TECHNICAL_CONDITION'] = df['BUILDING_TECHNICAL_CONDITION'].map(condition_mapping).astype('category')
+    df['PREMISSES_TECHNICAL_CONDITION'] = df['PREMISSES_TECHNICAL_CONDITION'].map(condition_mapping)
+    df['BUILDING_TECHNICAL_CONDITION'] = df['BUILDING_TECHNICAL_CONDITION'].map(condition_mapping)
 
     building_quality_mapping = { 'niski': 0,'do remontu': 1,'średni': 2,'wysoki': 3, 'deweloperski / do wykończenia': 4}
-    df['BUILDING_STANDARD_QUALITY'] = df['BUILDING_STANDARD_QUALITY'].map(building_quality_mapping).astype('category')
+    df['BUILDING_STANDARD_QUALITY'] = df['BUILDING_STANDARD_QUALITY'].map(building_quality_mapping)
 
     county_flood_risk_mapping = {'very low': 0, 'low': 1, 'medium': 2, 'high': 3, 'very high': 4}
-    df['county_flood_risk_rating'] = df['county_flood_risk_rating'].map(county_flood_risk_mapping).astype('category')
+    df['county_flood_risk_rating'] = df['county_flood_risk_rating'].map(county_flood_risk_mapping)
 
     market_type_mapping = {'wtórny': 0, 'pierwotny': 1}
-    df['MARKET_TYPE'] = df['MARKET_TYPE'].map(market_type_mapping).astype('category')
+    df['MARKET_TYPE'] = df['MARKET_TYPE'].map(market_type_mapping)
 
     df = df[df['CONSTRUCTION_YEAR'] >= 1600]
-    df = pd.get_dummies(df, columns=['CONSTRUCTION_TYPE'])
-    df = pd.get_dummies(df, columns=['PROPERTY_KIND'])
-    df = pd.get_dummies(df, ['INFORMATION_SOURCE'])
-    df = pd.get_dummies(df, columns=['TYPE_OF_BUILD'])
+    df = pd.get_dummies(df, columns = ['CONSTRUCTION_TYPE'], dtype=float)
+    df = pd.get_dummies(df, columns = ['PROPERTY_KIND'], dtype=float)
+    df = pd.get_dummies(df, columns = ['INFORMATION_SOURCE'], dtype=float)
+    df = pd.get_dummies(df, columns = ['TYPE_OF_BUILD'], dtype=float)
 
     return df
 
