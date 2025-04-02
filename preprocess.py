@@ -38,8 +38,6 @@ def enrich_dataframe_with_me_transformation(df: pd.DataFrame, df_me: pd.DataFram
     # Convert date columns to datetime format
     df_me['Date_period_from'] = pd.to_datetime(df_me['Date_period_from'], format='%Y-%m-%d')
     df_me['Date_period_until'] = pd.to_datetime(df_me['Date_period_until'], format='%Y-%m-%d')
-
-    df['VALUE_DATE_ORIGINAL'] = df['VALUE_DATE']
     df['VALUE_DATE'] = pd.to_datetime(df['VALUE_DATE'], format='%Y-%m-%d', errors='coerce')
 
     # Drop rows where VALUE_DATE is NaN - few values are dropped - explained in report
