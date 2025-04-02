@@ -1,5 +1,7 @@
 import pandas as pd
 import numpy as np
+from category_encoders import TargetEncoder
+from sklearn.impute import KNNImputer
 
 def filter_out_non_housing(df):
     """
@@ -114,25 +116,6 @@ def enrich_dataframe_with_me_transformation(df: pd.DataFrame, df_me: pd.DataFram
 
     return df
 
-
-def preprocess(df, df_me):
-    """
-    Preprocess the DataFrame by filtering out non-housing data and dropping empty columns.
-    """
-    # Filter out non-housing data
-    df_housing = filter_out_non_housing(df)
-
-    # Drop empty columns
-    df_cleaned = drop_empty_columns(df_housing)
-
-    # Enrich the DataFrame with ME transformation data
-    df_enriched = enrich_dataframe_with_me_transformation(df_cleaned, df_me)
-
-    # Preprocess categorical columns
-    df_enriched = preprocess_categorical(df_enriched)
-
-    return df_cleaned
-
 def encode_categorical_columns(df):
     """
     Encode categorical columns ( using one-hot encoding or label encoding depending on the column values).
@@ -166,6 +149,149 @@ def drop_columns(df):
     df = df.drop(columns=cols_to_drop)
 
     return df
+
+def fit_target_encoder(df, y):
+    """
+    Apply target encoder to 
+    """
+    city_encoder = TargetEncoder()
+    df['CITY'] = city_encoder.fit_transform(df['CITY'], y)
+
+    voivodeship_encoder = TargetEncoder()
+    df['VOIVODESHIP'] = voivodeship_encoder.fit_transform(df['VOIVODESHIP'], y)
+
+    county_encoder = TargetEncoder()
+    df['COUNTY'] = county_encoder.fit_transform(df['COUNTY'], y)
+
+    community_encoder = TargetEncoder()
+    df['COMMUNITY'] = community_encoder.fit_transform(df['COMMUNITY'], y)
+
+    return df, city_encoder, voivodeship_encoder, county_encoder, community_encoder
+
+def apply_target_encoder(df, city_encoder, voivodeship_encoder, county_encoder, community_encoder):
+    """
+    Apply target encoder to the DataFrame.
+    Note: fit(X, y).transform(X) does not equal fit_transform(X, y).
+    """
+    df['CITY'] = city_encoder.transform(df['CITY'])
+    df['VOIVODESHIP'] = voivodeship_encoder.transform(df['VOIVODESHIP'])
+    df['COUNTY'] = county_encoder.transform(df['COUNTY'])
+    df['COMMUNITY'] = community_encoder.transform(df['COMMUNITY'])
+
+    return df
+
+def custom_imputation(df, knn_neighbors=5):
+    """
+    Custom imputation function for missing values in the DataFrame.
+    - Imputes "Nie" for specific columns.
+    - Imputes -1 for columns with >= 25% missing values.
+    - Applies KNN imputation for columns with < 25% missing values.
+    """
+    df = df.copy()  
+    special_impute_cols = ['RENEWABLE_ENERGY_HEATING', 'RENEWABLE_ENERGY_ELECTRIC', 'CERTIFICATE_PHI']
+    
+    # Impute "Nie" for special columns
+    for col in special_impute_cols:
+        if col in df.columns:
+            df[col] = df[col].fillna("Nie")
+    
+    missing_perc = df.isna().mean() * 100
+
+    # Impute -1 for columns with >= 25% missing values
+    high_missing_cols = missing_perc[missing_perc >= 25].index.tolist()
+    df[high_missing_cols] = df[high_missing_cols].fillna(-1)
+    
+    # KNN Imputation for columns with < 25% missing values
+    low_missing_cols = missing_perc[(missing_perc > 0) & (missing_perc < 25)].index.tolist()
+    if low_missing_cols:
+        knn_imputer = KNNImputer(n_neighbors=knn_neighbors)
+        imputed_df = pd.DataFrame(knn_imputer.fit_transform(df), columns=df.columns, index=df.index)
+
+    return imputed_df, high_missing_cols, low_missing_cols, knn_imputer
+
+def apply_custom_imputation(df, high_missing_cols, low_missing_cols, knn_imputer):
+    """
+    Perform custom imputation on the test set.
+    """
+    df = df.copy()  
+    special_impute_cols = ['RENEWABLE_ENERGY_HEATING', 'RENEWABLE_ENERGY_ELECTRIC', 'CERTIFICATE_PHI']
+    
+    for col in special_impute_cols:
+        if col in df.columns:
+            df[col] = df[col].fillna("Nie")
+    
+    df[high_missing_cols] = df[high_missing_cols].fillna(-1)
+    if low_missing_cols:
+        imputed_df = pd.DataFrame(knn_imputer.transform(df), columns=df.columns, index=df.index)
+
+    return imputed_df
+
+def preprocess_train(X, y, df_me):
+    """
+    Preprocess the DataFrame by filtering out non-housing data and dropping empty columns.
+    """
+    # Filter out non-housing data
+    df_housing = filter_out_non_housing(X)
+
+    # Drop empty columns
+    df_cleaned = drop_empty_columns(df_housing)
+
+    # encode categorical columns
+    df_encoded = encode_categorical_columns(df_cleaned)
+
+    # Drop unnecessary columns
+    df_cleaned_encoded = drop_columns(df_encoded)
+
+    # Enrich the DataFrame with ME transformation data
+    df_enriched = enrich_dataframe_with_me_transformation(df_cleaned_encoded, df_me)
+
+    # Preprocess categorical columns
+    df_enriched = preprocess_categorical(df_enriched)
+
+    # Fit and apply target encoder to the training set
+    df_enriched, city_encoder, voivodeship_encoder, county_encoder, community_encoder = fit_target_encoder(df_enriched, y)
+
+    # Fit and apply imputation
+    df_imputed, high_missing_cols, low_missing_cols, knn_imputer = custom_imputation(df_enriched)
+
+    return df_imputed, city_encoder, voivodeship_encoder, county_encoder, community_encoder, high_missing_cols, low_missing_cols, knn_imputer 
+
+
+def preprocess_test(X, df_me, city_encoder, voivodeship_encoder, county_encoder, community_encoder, high_missing_cols, low_missing_cols, knn_imputer):
+    """
+    Preprocess the DataFrame by filtering out non-housing data and dropping empty columns.
+    """
+    # Filter out non-housing data
+    df_housing = filter_out_non_housing(X)
+
+    # Drop empty columns
+    df_cleaned = drop_empty_columns(df_housing)
+
+    # encode categorical columns
+    df_encoded = encode_categorical_columns(df_cleaned)
+
+    # Drop unnecessary columns
+    df_cleaned_encoded = drop_columns(df_encoded)
+
+    # Enrich the DataFrame with ME transformation data
+    df_enriched = enrich_dataframe_with_me_transformation(df_cleaned_encoded, df_me)
+
+    # Preprocess categorical columns
+    df_enriched = preprocess_categorical(df_enriched)
+
+    # Apply target encoder to the test set
+    df_enriched = apply_target_encoder(df_enriched, city_encoder, voivodeship_encoder, county_encoder, community_encoder)
+
+    # Apply imputation
+    df_imputed = apply_custom_imputation(df_enriched, high_missing_cols, low_missing_cols, knn_imputer)
+
+    return df_imputed
+
+
+
+
+
+
 
 
 
