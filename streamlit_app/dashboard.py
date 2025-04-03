@@ -15,7 +15,7 @@ import scipy.stats as stats
 
 ING_COLOR = "#ff6200"
 
-def show(X_train, y_train, X_test, y_test, model, explainer, shap_values, COLOR):  
+def show(X_train, y_train, X_test, y_test, model, shap_values, COLOR):  
     # y_train_original = np.expm1(y_train)
     # y_test_original = np.expm1(y_test)  
     sorted_indices_train = y_train.sort_values(ascending=True).index
