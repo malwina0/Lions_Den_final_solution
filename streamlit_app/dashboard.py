@@ -180,6 +180,39 @@ def multiple_linear_regression(df, target_variable):
     st.pyplot(fig)
 
 
+def plot_scatter(df, x_col, y_col, hue_col, color_list=None):
+    """
+    Creates a scatter plot of x_col vs y_col with color grouping by hue_col using a user-defined list of colors.
+
+    Parameters:
+    df (pd.DataFrame): The DataFrame containing the data.
+    x_col (str): Column name for the X-axis.
+    y_col (str): Column name for the Y-axis.
+    hue_col (str): Column name for the categorical hue (color grouping).
+    color_list (list, optional): List of colors to use in the plot.
+
+    Returns:
+    None
+    """
+    fig, ax = plt.subplots(figsize=(10, 6))  # Corrected figure initialization
+
+    # Use the custom list of colors if provided, otherwise use default palette
+    palette = color_list if color_list else sns.color_palette("Set1")
+
+    sns.scatterplot(data=df, x=x_col, y=y_col, hue=hue_col, palette=palette, alpha=0.7, ax=ax)
+    ax.set_title(f"Relationship between {x_col} and {y_col}")
+    ax.legend(title=hue_col)
+
+    st.pyplot(fig)  # Streamlit rendering
+
+
+def plot_scatters():
+    df_mm = pd.read_csv('me2.csv')
+    df_mm = df_mm[df_mm['PROPERTY_KIND'].isin(['Lokal mieszkalny', 'Budynek mieszkalny jednorodzinny'])]
+    plot_scatter(df_mm, '10YSR_Annual_absolute_difference', 'VALUATION_VALUE', 'PROPERTY_KIND', colors)
+    plot_scatter(df_mm, '10YSR_4_Quarter_Annual_Average', 'VALUATION_VALUE', 'PROPERTY_KIND', colors)
+
+
 def multiple_linear_regression(df, target_variable):
     # Select all columns except the target variable and date columns
     feature_columns = df.drop(columns=[target_variable, 'year_month']).columns

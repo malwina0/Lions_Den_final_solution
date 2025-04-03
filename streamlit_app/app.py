@@ -71,13 +71,11 @@ def main():
     df = load_data()
 
     # Tworzenie zakładek
-    tab1, tab2, tab3 = st.tabs(["Marco-economic relationships", "correlation matrix", "Linear regression" ])
+    tab1, tab2, tab3, tab4 = st.tabs(["Marco-economic relationships", "correlation matrix", "Linear regression", "General relationships"])
 
     # Zakładka 1 - Wykresy zależności
     with tab1:
-        st.subheader('Relationships in data')
-        create_scatter_plot(df)
-        plot_correlation_matrix(df)
+        plot_scatters()
 
     # Zakładka 2 - Macierz korelacji
     with tab2:
@@ -86,6 +84,11 @@ def main():
 
     with tab3:
         multiple_linear_regression(df, 'VALUATION_VALUE')
+
+    with tab4:
+        st.subheader('Relationships in data')
+        create_scatter_plot(df)
+        plot_correlation_matrix(df)
 
 if __name__ == "__main__":
     main()
