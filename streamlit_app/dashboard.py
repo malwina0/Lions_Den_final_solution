@@ -156,7 +156,7 @@ def create_scatter_plot(df):
 
 # Funkcja do wyświetlania macierzy korelacji
 def plot_correlation_matrix(df):
-    df_tmp = df.drop(columns=['year_month']).columns
+    df_tmp = df.drop(columns=['year_month'])
     correlation_matrix = df_tmp.corr()
 
     # Wykres macierzy korelacji
