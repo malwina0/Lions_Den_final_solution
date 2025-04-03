@@ -24,7 +24,7 @@ from dashboard import *
 COLOR = "#FFFFFF"
 METRIC_COLOR = "#ff6200"
 
-# st.set_page_config(layout="wide")
+st.set_page_config(layout="wide")
 
 st.markdown(f"""
     <style>
@@ -52,17 +52,18 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 # Load data
-with open("streamlit_app/dataset.pkl", "rb") as f:
-    data = pickle.load(f)
-
-X_train = data["X_train"]
-y_train = data["y_train"]
-X_test = data["X_test"]
-y_test = data["y_test"]
+with open('streamlit_app/train_test_data2.pkl', 'rb') as f:
+    X_train, y_train, X_test, y_test = pickle.load(f)
 
 # Load model
-with open("streamlit_app/xgb_model.pkl", "rb") as f:
+with open("streamlit_app/best_xgb_model.pkl", "rb") as f:
     model = pickle.load(f)
+
+with open("streamlit_app/shap_explainer.pkl", "rb") as explainer_file:
+    explainer = pickle.load(explainer_file)
+
+with open("streamlit_app/shap_values.pkl", "rb") as shap_file:
+    shap_values = pickle.load(shap_file)
 
 def main():
     st.title('Analiza zależności od VALUATION_VALUE')
@@ -71,24 +72,24 @@ def main():
     df = load_data()
 
     # Tworzenie zakładek
-    tab1, tab2, tab3, tab4 = st.tabs(["Marco-economic relationships", "correlation matrix", "Linear regression", "General relationships"])
+    tab1, tab2, tab3, tab4 = st.tabs(["Training Data Visualizations", "Marco-economic relationships", "correlation matrix", "Linear regression" ])
 
-    # Zakładka 1 - Wykresy zależności
     with tab1:
-        plot_scatters()
-
-    # Zakładka 2 - Macierz korelacji
+        st.subheader('Training Data Visualizations')
+        dashboard.show(X_train, y_train, X_test, y_test, model, explainer, shap_values, "#FFFFFF")
+    # Zakładka 1 - Wykresy zależności
     with tab2:
-        st.subheader('Correlation matrix')
-        plot_correlation_matrix(df)
-
-    with tab3:
-        multiple_linear_regression(df, 'VALUATION_VALUE')
-
-    with tab4:
         st.subheader('Relationships in data')
         create_scatter_plot(df)
         plot_correlation_matrix(df)
+
+    # Zakładka 2 - Macierz korelacji
+    with tab3:
+        st.subheader('Correlation matrix')
+        plot_correlation_matrix(df)
+
+    with tab4:
+        multiple_linear_regression(df, 'VALUATION_VALUE')
 
 if __name__ == "__main__":
     main()
