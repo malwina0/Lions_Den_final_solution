@@ -208,6 +208,7 @@ def plot_scatter(df, x_col, y_col, hue_col, color_list=None):
 
 def plot_scatters():
     df_mm = pd.read_csv('me2.csv')
+    colors = ['#ff6200', '#000066']
     df_mm = df_mm[df_mm['PROPERTY_KIND'].isin(['Lokal mieszkalny', 'Budynek mieszkalny jednorodzinny'])]
     plot_scatter(df_mm, '10YSR_Annual_absolute_difference', 'VALUATION_VALUE', 'PROPERTY_KIND', colors)
     plot_scatter(df_mm, '10YSR_4_Quarter_Annual_Average', 'VALUATION_VALUE', 'PROPERTY_KIND', colors)
