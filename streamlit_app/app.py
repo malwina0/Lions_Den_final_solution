@@ -52,17 +52,14 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 # Load data
-with open('streamlit_app/train_test_data2.pkl', 'rb') as f:
+with open('train_test_data2.pkl', 'rb') as f:
     X_train, y_train, X_test, y_test = pickle.load(f)
 
 # Load model
-with open("streamlit_app/best_xgb_model.pkl", "rb") as f:
+with open("best_xgb_model.pkl", "rb") as f:
     model = pickle.load(f)
 
-with open("streamlit_app/shap_explainer.pkl", "rb") as explainer_file:
-    explainer = pickle.load(explainer_file)
-
-with open("streamlit_app/shap_values.pkl", "rb") as shap_file:
+with open("shap_values.pkl", "rb") as shap_file:
     shap_values = pickle.load(shap_file)
 
 def main():
@@ -76,7 +73,7 @@ def main():
 
     with tab1:
         st.subheader('Training Data Visualizations')
-        dashboard.show(X_train, y_train, X_test, y_test, model, explainer, shap_values, "#FFFFFF")
+        dashboard.show(X_train, y_train, X_test, y_test, model, shap_values, "#FFFFFF")
     # Zakładka 1 - Wykresy zależności
     with tab2:
         st.subheader('Relationships in data')
